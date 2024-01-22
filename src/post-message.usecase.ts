@@ -26,7 +26,7 @@ export class PostMessageUseCase {
   constructor(private readonly messageRepository: MessageRepository, private readonly dateProvider: DateProvider) {}
 
   handle(postMessageCommand: PostMessageCommand) {
-    if (postMessageCommand.text.length === 0) {
+    if (postMessageCommand.text.trim().length === 0) {
       throw new EmptyMessageError();
     }
 
