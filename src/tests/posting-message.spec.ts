@@ -1,8 +1,8 @@
+import { InMemoryMessageRepository } from "../message.inmemory.repository";
 import {
   DateProvider,
   EmptyMessageError,
   Message,
-  MessageRepository,
   MessageTooLongError,
   PostMessageCommand,
   PostMessageUseCase,
@@ -16,10 +16,10 @@ describe("Feature: Posting a message", () => {
   });
 
   describe("Rule: A message can contain a maximum of 280 characters", () => {
-    test("Alice can post a message on her timeline", () => {
+    test("Alice can post a message on her timeline", async () => {
       fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
 
-      fixture.whenUserPostsAMessage({
+      await fixture.whenUserPostsAMessage({
         id: "message-id",
         text: "Hello World",
         author: "Alice",
@@ -33,12 +33,12 @@ describe("Feature: Posting a message", () => {
       });
     });
 
-    test("Alice cannot post a message longer than 280 characters", () => {
+    test("Alice cannot post a message longer than 280 characters", async () => {
       const textWith281Chars = "a".repeat(281);
 
       fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
 
-      fixture.whenUserPostsAMessage({
+      await fixture.whenUserPostsAMessage({
         id: "message-id",
         text: textWith281Chars,
         author: "Alice",
@@ -49,10 +49,10 @@ describe("Feature: Posting a message", () => {
   });
 
   describe("Rule: A message cannot be empty", () => {
-    test("Alice cannot post a message with an empty text", () => {
+    test("Alice cannot post a message with an empty text", async () => {
       fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
 
-      fixture.whenUserPostsAMessage({
+      await fixture.whenUserPostsAMessage({
         id: "message-id",
         text: "",
         author: "Alice",
@@ -60,29 +60,22 @@ describe("Feature: Posting a message", () => {
 
       fixture.thenErrorShouldBe(EmptyMessageError);
     });
-  });
 
-  test("Alice cannot post a message with only spaces", () => {
-    fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
+    test("Alice cannot post a message with only spaces", async () => {
+      fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
 
-    fixture.whenUserPostsAMessage({
-      id: "message-id",
-      text: "  ",
-      author: "Alice",
+      await fixture.whenUserPostsAMessage({
+        id: "message-id",
+        text: "  ",
+        author: "Alice",
+      });
+
+      fixture.thenErrorShouldBe(EmptyMessageError);
     });
-
-    fixture.thenErrorShouldBe(EmptyMessageError);
   });
 });
 
-class InMemoryMessageRepository implements MessageRepository {
-  message: Message;
-  save(msg: Message): void {
-    this.message = msg;
-  }
-}
-
-class StubDateProvider implements DateProvider {
+export class StubDateProvider implements DateProvider {
   now: Date;
   getNow(): Date {
     return this.now;
@@ -100,9 +93,9 @@ const createFixture = () => {
     givenNowIs(now: Date) {
       dateProvider.now = now;
     },
-    whenUserPostsAMessage(postMessageCommand: PostMessageCommand) {
+    async whenUserPostsAMessage(postMessageCommand: PostMessageCommand) {
       try {
-        postMessageUseCase.handle(postMessageCommand);
+        await postMessageUseCase.handle(postMessageCommand);
       } catch (error) {
         throwError = error;
       }

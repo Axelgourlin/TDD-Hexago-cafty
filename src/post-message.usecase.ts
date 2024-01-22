@@ -7,12 +7,12 @@ export type Message = {
 
 export type PostMessageCommand = {
   id: string;
-  text: string;
   author: string;
+  text: string;
 };
 
 export interface MessageRepository {
-  save(message: Message): void;
+  save(message: Message): Promise<void>;
 }
 
 export interface DateProvider {
@@ -25,7 +25,7 @@ export class EmptyMessageError extends Error {}
 export class PostMessageUseCase {
   constructor(private readonly messageRepository: MessageRepository, private readonly dateProvider: DateProvider) {}
 
-  handle(postMessageCommand: PostMessageCommand) {
+  async handle(postMessageCommand: PostMessageCommand): Promise<void> {
     if (postMessageCommand.text.trim().length === 0) {
       throw new EmptyMessageError();
     }
@@ -35,7 +35,7 @@ export class PostMessageUseCase {
     }
 
     const { id, text, author } = postMessageCommand;
-    this.messageRepository.save({
+    await this.messageRepository.save({
       id,
       text,
       author,
