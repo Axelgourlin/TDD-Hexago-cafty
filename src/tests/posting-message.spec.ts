@@ -1,18 +1,11 @@
-import { Message } from "../message";
-import { InMemoryMessageRepository } from "../message.inmemory.repository";
-import {
-  DateProvider,
-  EmptyMessageError,
-  MessageTooLongError,
-  PostMessageCommand,
-  PostMessageUseCase,
-} from "../post-message.usecase";
+import { EmptyMessageError, MessageTooLongError } from "../post-message.usecase";
+import { MessagingFixture, createMessagingFixture } from "./messaging-fixture";
 
 describe("Feature: Posting a message", () => {
-  let fixture: Fixture;
+  let fixture: MessagingFixture;
 
   beforeEach(() => {
-    fixture = createFixture();
+    fixture = createMessagingFixture();
   });
 
   describe("Rule: A message can contain a maximum of 280 characters", () => {
@@ -25,7 +18,7 @@ describe("Feature: Posting a message", () => {
         author: "Alice",
       });
 
-      fixture.thenPostedMessageShouldBe({
+      fixture.thenMessageShouldBe({
         id: "message-id",
         text: "Hello World",
         author: "Alice",
@@ -74,39 +67,3 @@ describe("Feature: Posting a message", () => {
     });
   });
 });
-
-export class StubDateProvider implements DateProvider {
-  now: Date;
-  getNow(): Date {
-    return this.now;
-  }
-}
-
-const createFixture = () => {
-  const dateProvider = new StubDateProvider();
-  const messageRepository = new InMemoryMessageRepository();
-  const postMessageUseCase = new PostMessageUseCase(messageRepository, dateProvider);
-
-  let throwError: Error;
-
-  return {
-    givenNowIs(now: Date) {
-      dateProvider.now = now;
-    },
-    async whenUserPostsAMessage(postMessageCommand: PostMessageCommand) {
-      try {
-        await postMessageUseCase.handle(postMessageCommand);
-      } catch (error) {
-        throwError = error;
-      }
-    },
-    thenPostedMessageShouldBe(expectedMessage: Message) {
-      expect(expectedMessage).toEqual(messageRepository.getMessageById(expectedMessage.id));
-    },
-    thenErrorShouldBe(expectedErrorClass: new () => Error) {
-      expect(throwError).toBeInstanceOf(expectedErrorClass);
-    },
-  };
-};
-
-type Fixture = ReturnType<typeof createFixture>;
