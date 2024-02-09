@@ -1,6 +1,5 @@
 import { MessageRepository } from "./message.repository";
 import { DateProvider } from "./post-message.usecase";
-import { aliceMessage1, aliceMessage2 } from "./tests/view-timeline.spec";
 
 export type TimeLine = {
   author: string;
@@ -12,6 +11,8 @@ export type ViewTimelineCommand = {
   author: string;
 };
 
+const ONE_MINUTE_IN_MS = 60000;
+
 export class ViewTimelineUseCase {
   constructor(private readonly messageRepository: MessageRepository, private readonly dateProvider: DateProvider) {}
 
@@ -20,17 +21,24 @@ export class ViewTimelineUseCase {
 
     messagesOfAuthor.sort((msgA, msgB) => msgB.publishedAt.getTime() - msgA.publishedAt.getTime());
 
-    return Promise.resolve([
-      {
-        author: messagesOfAuthor[0].author,
-        text: messagesOfAuthor[0].text,
-        publicationTime: "1 minute ago",
-      },
-      {
-        author: messagesOfAuthor[1].author,
-        text: messagesOfAuthor[1].text,
-        publicationTime: "31 minute ago",
-      },
-    ]);
+    return messagesOfAuthor.map((message) => ({
+      author: message.author,
+      text: message.text,
+      publicationTime: this.publicationTime(message.publishedAt),
+    }));
+  }
+
+  private publicationTime(publishedAt: Date): string {
+    const now = this.dateProvider.getNow();
+    const diff = now.getTime() - publishedAt.getTime();
+    const minutes = diff / ONE_MINUTE_IN_MS;
+
+    if (minutes < 1) {
+      return "less than a minute ago";
+    } else {
+      const floorMinutes = Math.floor(minutes);
+      const pluralizeMinutes = floorMinutes === 1 ? "minute" : "minutes";
+      return `${floorMinutes.toString()} ${pluralizeMinutes} ago`;
+    }
   }
 }
