@@ -1,10 +1,9 @@
-import { EmptyMessageError, MessageTooLongError } from "../post-message.usecase";
+import { MessageTooLongError, EmptyMessageError } from "../message";
 import { messageBuilder } from "./message.builder";
 import { MessagingFixture, createMessagingFixture } from "./messaging-fixture";
 
 describe("Feature: Posting a message", () => {
   let fixture: MessagingFixture;
-  const aliceMessageBuilder = messageBuilder().withId("message-id").withAuthor("Alice");
 
   beforeEach(() => {
     fixture = createMessagingFixture();
@@ -14,10 +13,19 @@ describe("Feature: Posting a message", () => {
     test("Alice can post a message on her timeline", async () => {
       fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
 
-      await fixture.whenUserPostsAMessage(aliceMessageBuilder.withText("Hello World").build());
+      await fixture.whenUserPostsAMessage({
+        id: "message-id",
+        author: "Alice",
+        text: "Hello World",
+      });
 
       await fixture.thenMessageShouldBe(
-        aliceMessageBuilder.withText("Hello World").withPublishedAt(new Date("2023-01-19T19:00:00.000Z")).build()
+        messageBuilder()
+          .withId("message-id")
+          .withAuthor("Alice")
+          .withText("Hello World")
+          .withPublishedAt(new Date("2023-01-19T19:00:00.000Z"))
+          .build()
       );
     });
 
@@ -26,7 +34,11 @@ describe("Feature: Posting a message", () => {
 
       fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
 
-      await fixture.whenUserPostsAMessage(aliceMessageBuilder.withText(textWith281Chars).build());
+      await fixture.whenUserPostsAMessage({
+        id: "message-id",
+        author: "Alice",
+        text: textWith281Chars,
+      });
 
       fixture.thenErrorShouldBe(MessageTooLongError);
     });
@@ -36,7 +48,11 @@ describe("Feature: Posting a message", () => {
     test("Alice cannot post a message with an empty text", async () => {
       fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
 
-      await fixture.whenUserPostsAMessage(aliceMessageBuilder.withText("").build());
+      await fixture.whenUserPostsAMessage({
+        id: "message-id",
+        author: "Alice",
+        text: "",
+      });
 
       fixture.thenErrorShouldBe(EmptyMessageError);
     });
@@ -44,7 +60,11 @@ describe("Feature: Posting a message", () => {
     test("Alice cannot post a message with only spaces", async () => {
       fixture.givenNowIs(new Date("2023-01-19T19:00:00.000Z"));
 
-      await fixture.whenUserPostsAMessage(aliceMessageBuilder.withText(" ").build());
+      await fixture.whenUserPostsAMessage({
+        id: "message-id",
+        author: "Alice",
+        text: " ",
+      });
 
       fixture.thenErrorShouldBe(EmptyMessageError);
     });

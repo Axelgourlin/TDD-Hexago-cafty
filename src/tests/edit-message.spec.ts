@@ -1,4 +1,4 @@
-import { EmptyMessageError, MessageTooLongError } from "../post-message.usecase";
+import { MessageTooLongError, EmptyMessageError } from "../message";
 import { messageBuilder } from "./message.builder";
 import { MessagingFixture, createMessagingFixture } from "./messaging-fixture";
 
