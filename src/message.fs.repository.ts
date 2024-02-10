@@ -6,9 +6,24 @@ import { Message } from "./message";
 export class FileSystemMessageRepository implements MessageRepository {
   private readonly messagePath = path.join(__dirname, "message.json");
 
+  async getById(messageId: string): Promise<Message> {
+    const allMessages = await this.getMessages();
+    return allMessages.find((msg) => msg.id === messageId)!;
+  }
+
+  async getAllByAuthor(author: string): Promise<Message[]> {
+    const messages = await this.getMessages();
+    return messages.filter((msg) => msg.author === author);
+  }
+
   async save(message: Message): Promise<void> {
     const messages = await this.getMessages();
-    messages.push(message);
+    const existingMessageIndex = messages.findIndex((m) => m.id === message.id);
+    if (existingMessageIndex === -1) {
+      messages.push(message);
+    } else {
+      messages[existingMessageIndex] = message;
+    }
 
     return fs.promises.writeFile(this.messagePath, JSON.stringify(messages));
   }
@@ -32,10 +47,5 @@ export class FileSystemMessageRepository implements MessageRepository {
       author: msg.author,
       publishedAt: new Date(msg.publishedAt),
     }));
-  }
-
-  async getAllByAuthor(author: string): Promise<Message[]> {
-    const messages = await this.getMessages();
-    return messages.filter((msg) => msg.author === author);
   }
 }

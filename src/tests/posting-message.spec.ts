@@ -16,7 +16,7 @@ describe("Feature: Posting a message", () => {
 
       await fixture.whenUserPostsAMessage(aliceMessageBuilder.withText("Hello World").build());
 
-      fixture.thenMessageShouldBe(
+      await fixture.thenMessageShouldBe(
         aliceMessageBuilder.withText("Hello World").withPublishedAt(new Date("2023-01-19T19:00:00.000Z")).build()
       );
     });
