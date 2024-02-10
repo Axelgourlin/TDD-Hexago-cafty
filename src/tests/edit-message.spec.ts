@@ -10,26 +10,16 @@ describe("Feature: Editing a message", () => {
 
   describe("Rule: The edited text should not be superior to 280 characters", () => {
     test("Alice can edit her message to a text inferior to 280 characters", async () => {
-      fixture.givenTheFollowingMessagesExist([
-        messageBuilder({
-          id: "message-id",
-          author: "Alice",
-          text: "Hello Wrold",
-        }),
-      ]);
+      const aliceMessageBuilder = messageBuilder().withId("message-id").withAuthor("Alice");
+
+      fixture.givenTheFollowingMessagesExist([aliceMessageBuilder.withText("Hello Wrold").build()]);
 
       await fixture.whenUserEditsMessage({
         messageId: "message-id",
         text: "Hello World",
       });
 
-      fixture.thenMessageShouldBe(
-        messageBuilder({
-          id: "message-id",
-          author: "Alice",
-          text: "Hello World",
-        })
-      );
+      fixture.thenMessageShouldBe(aliceMessageBuilder.withText("Hello World").build());
     });
   });
 });
