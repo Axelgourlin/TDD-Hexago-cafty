@@ -4,7 +4,7 @@ import { MessageRepository } from "./message.repository";
 import { Message, MessageText } from "./message";
 
 export class FileSystemMessageRepository implements MessageRepository {
-  private readonly messagePath = path.join(__dirname, "message.json");
+  constructor(private readonly messagePath = path.join(__dirname, "message.json")) {}
 
   async getById(messageId: string): Promise<Message> {
     const allMessages = await this.getMessages();
@@ -25,7 +25,17 @@ export class FileSystemMessageRepository implements MessageRepository {
       messages[existingMessageIndex] = message;
     }
 
-    return fs.promises.writeFile(this.messagePath, JSON.stringify(messages));
+    return fs.promises.writeFile(
+      this.messagePath,
+      JSON.stringify(
+        messages.map((msg) => ({
+          id: msg.id,
+          author: msg.author,
+          text: msg.text.value,
+          publishedAt: msg.publishedAt,
+        }))
+      )
+    );
   }
 
   private async getMessages(): Promise<Message[]> {
