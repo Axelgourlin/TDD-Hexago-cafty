@@ -25,17 +25,7 @@ export class FileSystemMessageRepository implements MessageRepository {
       messages[existingMessageIndex] = message;
     }
 
-    return fs.promises.writeFile(
-      this.messagePath,
-      JSON.stringify(
-        messages.map((msg) => ({
-          id: msg.id,
-          author: msg.author,
-          text: msg.text.value,
-          publishedAt: msg.publishedAt,
-        }))
-      )
-    );
+    return fs.promises.writeFile(this.messagePath, JSON.stringify(messages.map((msg) => msg.data)));
   }
 
   private async getMessages(): Promise<Message[]> {
@@ -51,11 +41,13 @@ export class FileSystemMessageRepository implements MessageRepository {
       publishedAt: string;
     }[];
 
-    return messages.map((msg) => ({
-      id: msg.id,
-      text: MessageText.of(msg.text),
-      author: msg.author,
-      publishedAt: new Date(msg.publishedAt),
-    }));
+    return messages.map((msg) =>
+      Message.fromData({
+        id: msg.id,
+        text: msg.text,
+        author: msg.author,
+        publishedAt: new Date(msg.publishedAt),
+      })
+    );
   }
 }
