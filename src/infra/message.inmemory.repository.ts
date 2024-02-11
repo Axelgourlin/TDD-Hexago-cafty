@@ -1,5 +1,5 @@
-import { Message } from "./message";
-import { MessageRepository } from "./message.repository";
+import { Message } from "../domain/message";
+import { MessageRepository } from "./../application/message.repository";
 
 export class InMemoryMessageRepository implements MessageRepository {
   messages = new Map<string, Message>();
@@ -16,12 +16,13 @@ export class InMemoryMessageRepository implements MessageRepository {
 
   async getAllByAuthor(author: string): Promise<Message[]> {
     return (await Promise.resolve([...this.messages.values()].filter((message) => message.author === author))).map(
-      (m) => ({
-        id: m.id,
-        text: m.text,
-        author: m.author,
-        publishedAt: m.publishedAt,
-      })
+      (m) =>
+        Message.fromData({
+          id: m.id,
+          text: m.text,
+          author: m.author,
+          publishedAt: m.publishedAt,
+        })
     );
   }
 

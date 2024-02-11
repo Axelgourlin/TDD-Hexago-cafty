@@ -1,5 +1,5 @@
-import { MessageRepository } from "./message.repository";
-import { DateProvider } from "./post-message.usecase";
+import { DateProvider } from "../date.provider";
+import { MessageRepository } from "../message.repository";
 
 export type TimeLine = {
   author: string;

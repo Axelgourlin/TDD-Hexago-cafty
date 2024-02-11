@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-import { ViewTimelineCommand, ViewTimelineUseCase } from "./src/view-timeline.usecase";
-import { DateProvider, PostMessageCommand, PostMessageUseCase } from "./src/post-message.usecase";
+import { ViewTimelineCommand, ViewTimelineUseCase } from "./src/application/usecases/view-timeline.usecase";
+import { PostMessageCommand, PostMessageUseCase } from "./src/application/usecases/post-message.usecase";
 import { Command } from "commander";
-import { FileSystemMessageRepository } from "./src/message.fs.repository";
+import { FileSystemMessageRepository } from "./src/infra/message.fs.repository";
 import { randomUUID } from "crypto";
-import { EditMessageCommand, EditMessageUseCase } from "./src/edit-message.usecase";
+import { EditMessageCommand, EditMessageUseCase } from "./src/application/usecases/edit-message.usecase";
+import { DateProvider } from "./src/application/date.provider";
 
 class RealDateProvider implements DateProvider {
   getNow(): Date {

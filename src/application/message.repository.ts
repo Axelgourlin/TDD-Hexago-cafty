@@ -1,4 +1,4 @@
-import { Message } from "./message";
+import { Message } from "../domain/message";
 
 export interface MessageRepository {
   getById(messageId: string): Promise<Message>;
