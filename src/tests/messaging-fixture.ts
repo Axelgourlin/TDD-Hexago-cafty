@@ -20,7 +20,7 @@ export const createMessagingFixture = () => {
     givenNowIs(now: Date) {
       dateProvider.now = now;
     },
-    givenTheFollowingMessagesExist: (messages: Message[]) => {
+    givenTheFollowingMessagesExist(messages: Message[]) {
       messageRepository.givenExistingMessages(messages);
     },
     async whenUserSeesTheTimelineOf(timelineQuery: { author: string }) {
@@ -42,7 +42,7 @@ export const createMessagingFixture = () => {
         throwError = error;
       }
     },
-    thenUserShouldSee: (expectedTimeline: { author: string; text: string; publicationTime: string }[]) => {
+    thenUserShouldSee(expectedTimeline: { author: string; text: string; publicationTime: string }[]) {
       expect(timeline).toEqual(expectedTimeline);
     },
     async thenMessageShouldBe(expectedMessage: Message) {
