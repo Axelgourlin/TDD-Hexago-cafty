@@ -1,11 +1,14 @@
 #!/usr/bin/env node
-import { ViewTimelineCommand, ViewTimelineUseCase } from "./src/application/usecases/view-timeline.usecase";
-import { PostMessageCommand, PostMessageUseCase } from "./src/application/usecases/post-message.usecase";
 import { Command } from "commander";
-import { FileSystemMessageRepository } from "./src/infra/message.fs.repository";
 import { randomUUID } from "crypto";
-import { EditMessageCommand, EditMessageUseCase } from "./src/application/usecases/edit-message.usecase";
 import { DateProvider } from "./src/application/date.provider";
+import { EditMessageCommand, EditMessageUseCase } from "./src/application/usecases/edit-message.usecase";
+import { FollowUserCommand, FollowUserUseCase } from "./src/application/usecases/follow-user.usecase";
+import { PostMessageCommand, PostMessageUseCase } from "./src/application/usecases/post-message.usecase";
+import { ViewTimelineCommand, ViewTimelineUseCase } from "./src/application/usecases/view-timeline.usecase";
+import { ViewWallCommand, ViewWallUseCase } from "./src/application/usecases/view-wall.usecase";
+import { FileSystemFollowRepository } from "./src/infra/follow.fs.repository";
+import { FileSystemMessageRepository } from "./src/infra/message.fs.repository";
 
 class RealDateProvider implements DateProvider {
   getNow(): Date {
@@ -15,9 +18,13 @@ class RealDateProvider implements DateProvider {
 
 const dateProvider = new RealDateProvider();
 const messageRepository = new FileSystemMessageRepository();
+const followsRepository = new FileSystemFollowRepository();
+
 const postMessageUseCase = new PostMessageUseCase(messageRepository, dateProvider);
 const editMessageUseCase = new EditMessageUseCase(messageRepository);
 const viewTimelineUseCase = new ViewTimelineUseCase(messageRepository, dateProvider);
+const followUserUseCase = new FollowUserUseCase(followsRepository);
+const viewWallUseCase = new ViewWallUseCase(messageRepository, followsRepository, dateProvider);
 
 const program = new Command();
 
@@ -72,12 +79,46 @@ const viewTimelineCommand = new Command("view").argument("<user>", "the current 
   }
 });
 
+const followUserCommand = new Command("follow")
+  .argument("<user>", "the current user")
+  .argument("<user-to-follow>", "the user to follow")
+  .action(async (user, userToFollow) => {
+    const followUserCommand: FollowUserCommand = {
+      user,
+      userToFollow,
+    };
+    try {
+      await followUserUseCase.handle(followUserCommand);
+      console.log(`✅ ${userToFollow} is now followed`);
+      process.exit(0);
+    } catch (error) {
+      console.error("❌ Failed to follow user", error);
+      process.exit(1);
+    }
+  });
+
+const viewWallCommand = new Command("wall").argument("<user>", "the current user").action(async (user) => {
+  const viewWallCommand: ViewWallCommand = {
+    author: user,
+  };
+  try {
+    const wall = await viewWallUseCase.handle(viewWallCommand);
+    console.log(wall);
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Failed to display wall", error);
+    process.exit(1);
+  }
+});
+
 program
   .version("1.0.0")
   .description("Crafty social network")
   .addCommand(postMessageCommand)
   .addCommand(editMessageCommand)
-  .addCommand(viewTimelineCommand);
+  .addCommand(viewTimelineCommand)
+  .addCommand(followUserCommand)
+  .addCommand(viewWallCommand);
 
 async function main() {
   await program.parseAsync();

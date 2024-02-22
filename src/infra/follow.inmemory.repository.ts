@@ -20,7 +20,7 @@ export class InMemoryFollowsRepository implements FollowsRepository {
     this.followsByUser.set(follow.user, existingFollows);
   }
 
-  getFollowsOf(user: string): string[] {
-    return this.followsByUser.get(user) ?? [];
+  async getFollowsOf(user: string) {
+    return Promise.resolve(this.followsByUser.get(user) ?? undefined);
   }
 }
