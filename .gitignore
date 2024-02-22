@@ -1,3 +1,5 @@
 dist
 node_modules
-src/tests/message-test.json
+message-test.json
+follow-test.json
+.env

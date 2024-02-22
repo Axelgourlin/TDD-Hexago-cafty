@@ -1,0 +1,11 @@
+version: "3.8" # version du document docker compose
+
+services: # les services sont les containers.
+  postgres: # C'est le container postgres pour la database
+    image: postgres:13.7-alpine # image de postgres
+    ports: # ports du container exposé. portexposé:portlocal (le portlocal est le port a l'interieur du container)
+      - 5432:5432
+    environment: # variables d'environnement du container
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=crafty
