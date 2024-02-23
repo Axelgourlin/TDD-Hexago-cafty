@@ -12,6 +12,9 @@ export class EditMessageUseCase {
     try {
       message.editText(editMessageCommand.text);
     } catch (error) {
+      //TODO: add presenters for here
+      //if(error instanceof EmptyMessageError)
+      // presenter.showEmptyMessageError();
       return Err.of(error);
     }
 
