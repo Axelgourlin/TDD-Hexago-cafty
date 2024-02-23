@@ -1,14 +1,27 @@
 #!/usr/bin/env node
+import { DefaultTimelinePresenter } from "./timeline.default.presenter";
+import { PrismaClient } from "@prisma/client";
 import { Command } from "commander";
 import { randomUUID } from "crypto";
-import { DateProvider } from "./src/application/date.provider";
-import { EditMessageCommand, EditMessageUseCase } from "./src/application/usecases/edit-message.usecase";
-import { FollowUserCommand, FollowUserUseCase } from "./src/application/usecases/follow-user.usecase";
-import { PostMessageCommand, PostMessageUseCase } from "./src/application/usecases/post-message.usecase";
-import { ViewTimelineCommand, ViewTimelineUseCase } from "./src/application/usecases/view-timeline.usecase";
-import { ViewWallCommand, ViewWallUseCase } from "./src/application/usecases/view-wall.usecase";
-import { FileSystemFollowRepository } from "./src/infra/follow.fs.repository";
-import { FileSystemMessageRepository } from "./src/infra/message.fs.repository";
+import { DateProvider } from "../../src/application/date.provider";
+import { EditMessageCommand, EditMessageUseCase } from "../../src/application/usecases/edit-message.usecase";
+import { FollowUserCommand, FollowUserUseCase } from "../../src/application/usecases/follow-user.usecase";
+import { PostMessageCommand, PostMessageUseCase } from "../../src/application/usecases/post-message.usecase";
+import { ViewTimelineCommand, ViewTimelineUseCase } from "../../src/application/usecases/view-timeline.usecase";
+import { ViewWallCommand, ViewWallUseCase } from "../../src/application/usecases/view-wall.usecase";
+import { PrismaFollowsRepository } from "./../infra/follow.prisma.repository";
+import { PrismaMessageRepository } from "./../infra/message.prisma.repository";
+import { TimelinePresenter } from "../application/timeline.presenter";
+import { Timeline } from "../domain/timeline";
+import { EmptyMessageError, MessageTooLongError } from "../domain/message";
+
+class CliTimeLinePresenter implements TimelinePresenter {
+  constructor(private readonly defaultTimelinePresenter: DefaultTimelinePresenter) {}
+
+  show(timeline: Timeline): void {
+    console.table(this.defaultTimelinePresenter.show(timeline));
+  }
+}
 
 class RealDateProvider implements DateProvider {
   getNow(): Date {
@@ -17,14 +30,19 @@ class RealDateProvider implements DateProvider {
 }
 
 const dateProvider = new RealDateProvider();
-const messageRepository = new FileSystemMessageRepository();
-const followsRepository = new FileSystemFollowRepository();
+
+const prismaClient = new PrismaClient();
+const messageRepository = new PrismaMessageRepository(prismaClient);
+const followsRepository = new PrismaFollowsRepository(prismaClient);
 
 const postMessageUseCase = new PostMessageUseCase(messageRepository, dateProvider);
 const editMessageUseCase = new EditMessageUseCase(messageRepository);
 const viewTimelineUseCase = new ViewTimelineUseCase(messageRepository, dateProvider);
 const followUserUseCase = new FollowUserUseCase(followsRepository);
-const viewWallUseCase = new ViewWallUseCase(messageRepository, followsRepository, dateProvider);
+const viewWallUseCase = new ViewWallUseCase(messageRepository, followsRepository);
+
+const defaultTimelinePresenter = new DefaultTimelinePresenter(dateProvider);
+const cliTimelinePresenter = new CliTimeLinePresenter(defaultTimelinePresenter);
 
 const program = new Command();
 
@@ -38,9 +56,15 @@ const postMessageCommand = new Command("post")
       text: message,
     };
     try {
-      await postMessageUseCase.handle(postMessageCommand);
-      console.log("✅ Message posted");
-      process.exit(0);
+      const result = await postMessageUseCase.handle(postMessageCommand);
+
+      if (result.isOk()) {
+        console.log("✅ Message posted");
+        process.exit(0);
+      }
+
+      console.error("❌ Failed to post message", result.error);
+      process.exit(1);
     } catch (error) {
       console.error("❌ Failed to post message", error);
       process.exit(1);
@@ -56,9 +80,15 @@ const editMessageCommand = new Command("edit")
       text: message,
     };
     try {
-      await editMessageUseCase.handle(editMessageCommand);
-      console.log("✅ Message edited");
-      process.exit(0);
+      const result = await editMessageUseCase.handle(editMessageCommand);
+
+      if (result.isOk()) {
+        console.log("✅ Message edited");
+        process.exit(0);
+      }
+
+      console.error("❌ Failed to edit message", result.error);
+      process.exit(1);
     } catch (error) {
       console.error("❌ Failed to edit message", error);
       process.exit(1);
@@ -70,7 +100,7 @@ const viewTimelineCommand = new Command("view").argument("<user>", "the current 
     author: user,
   };
   try {
-    const timeline = await viewTimelineUseCase.handle(viewTimelineCommand);
+    const timeline = await viewTimelineUseCase.handle(viewTimelineCommand, cliTimelinePresenter);
     console.table(timeline);
     process.exit(0);
   } catch (error) {
@@ -102,8 +132,8 @@ const viewWallCommand = new Command("wall").argument("<user>", "the current user
     author: user,
   };
   try {
-    const wall = await viewWallUseCase.handle(viewWallCommand);
-    console.log(wall);
+    const wall = await viewWallUseCase.handle(viewWallCommand, cliTimelinePresenter);
+    console.table(wall);
     process.exit(0);
   } catch (error) {
     console.error("❌ Failed to display wall", error);
@@ -121,7 +151,9 @@ program
   .addCommand(viewWallCommand);
 
 async function main() {
+  await prismaClient.$connect();
   await program.parseAsync();
+  await prismaClient.$disconnect();
 }
 
 main();

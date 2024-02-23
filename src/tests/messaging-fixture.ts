@@ -4,6 +4,8 @@ import { ViewTimelineUseCase } from "../application/usecases/view-timeline.useca
 import { EditMessageUseCase } from "../application/usecases/edit-message.usecase";
 import { InMemoryMessageRepository } from "../infra/message.inmemory.repository";
 import { StubDateProvider } from "../infra/stub-date.provider";
+import { DefaultTimelinePresenter } from "../apps/timeline.default.presenter";
+import { TimelinePresenter } from "../application/timeline.presenter";
 
 export const createMessagingFixture = () => {
   const dateProvider = new StubDateProvider();
@@ -12,6 +14,13 @@ export const createMessagingFixture = () => {
   const postMessageUseCase = new PostMessageUseCase(messageRepository, dateProvider);
   const viewTimelineUseCase = new ViewTimelineUseCase(messageRepository, dateProvider);
   const editMessageUseCase = new EditMessageUseCase(messageRepository);
+
+  const defaultTimeLinePresenter = new DefaultTimelinePresenter(dateProvider);
+  const timelinePresenter: TimelinePresenter = {
+    show(timeLine) {
+      timeline = defaultTimeLinePresenter.show(timeLine);
+    },
+  };
 
   let throwError: Error;
   let timeline: { author: string; text: string; publicationTime: string }[] = [];
@@ -24,22 +33,23 @@ export const createMessagingFixture = () => {
       messageRepository.givenExistingMessages(messages);
     },
     async whenUserSeesTheTimelineOf(timelineQuery: { author: string }) {
-      timeline = await viewTimelineUseCase.handle({
-        author: timelineQuery.author,
-      });
+      await viewTimelineUseCase.handle(
+        {
+          author: timelineQuery.author,
+        },
+        timelinePresenter
+      );
     },
     async whenUserPostsAMessage(postMessageCommand: PostMessageCommand) {
-      try {
-        await postMessageUseCase.handle(postMessageCommand);
-      } catch (error) {
-        throwError = error;
+      const result = await postMessageUseCase.handle(postMessageCommand);
+      if (result.isErr()) {
+        throwError = result.error;
       }
     },
     async whenUserEditsMessage(editMessageCommand: { messageId: string; text: string }) {
-      try {
-        await editMessageUseCase.handle(editMessageCommand);
-      } catch (error) {
-        throwError = error;
+      const result = await editMessageUseCase.handle(editMessageCommand);
+      if (result.isErr()) {
+        throwError = result.error;
       }
     },
     thenUserShouldSee(expectedTimeline: { author: string; text: string; publicationTime: string }[]) {

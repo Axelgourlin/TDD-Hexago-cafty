@@ -5,6 +5,8 @@ import { FollowingFixture, createFollowingFixture } from "./following.fixture";
 import { messageBuilder } from "./message.builder";
 import { MessagingFixture, createMessagingFixture } from "./messaging-fixture";
 import { FollowsRepository } from "../application/follows.repository";
+import { DefaultTimelinePresenter } from "../apps/timeline.default.presenter";
+import { TimelinePresenter } from "../application/timeline.presenter";
 
 describe("Feature: Viewing user wall", () => {
   let fixture: Fixture;
@@ -73,18 +75,29 @@ const createFixture = ({
   messageRepository: MessageRepository;
   followsRepository: FollowsRepository;
 }) => {
-  let wall: { author: string; text: string; publicationTime: string }[];
   const dateProvider = new StubDateProvider();
-  const viewWallUseCase = new ViewWallUseCase(messageRepository, followsRepository, dateProvider);
+
+  const viewWallUseCase = new ViewWallUseCase(messageRepository, followsRepository);
+
+  let wall: { author: string; text: string; publicationTime: string }[];
+  const defaultWallPresenter = new DefaultTimelinePresenter(dateProvider);
+  const wallPresenter: TimelinePresenter = {
+    show(timeLine) {
+      wall = defaultWallPresenter.show(timeLine);
+    },
+  };
 
   return {
     givenNowIs(now: Date) {
       dateProvider.now = now;
     },
     async whenUserSeesTheWallOf(author: string) {
-      wall = await viewWallUseCase.handle({
-        author,
-      });
+      await viewWallUseCase.handle(
+        {
+          author,
+        },
+        wallPresenter
+      );
     },
     thenUserShouldSee(expectedWall: { author: string; text: string; publicationTime: string }[]) {
       expect(wall).toEqual(expectedWall);
