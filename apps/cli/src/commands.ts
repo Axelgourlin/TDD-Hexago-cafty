@@ -105,11 +105,10 @@ class ViewCommand extends CommandRunner {
       author: passedParams[0],
     };
     try {
-      const timeline = await this.viewTimelineUseCase.handle(
+      await this.viewTimelineUseCase.handle(
         viewTimelineCommand,
         this.cliTimeLinePresenter,
       );
-      console.log(timeline);
       process.exit(0);
     } catch (error) {
       console.error('❌ Failed to view timeline', error);
@@ -162,11 +161,10 @@ class WallCommand extends CommandRunner {
       author: passedParams[0],
     };
     try {
-      const wall = await this.viewWallUseCase.handle(
+      await this.viewWallUseCase.handle(
         viewWallCommand,
         this.cliTimeLinePresenter,
       );
-      console.log(wall);
       process.exit(0);
     } catch (error) {
       console.error('❌ Failed to view wall', error);
