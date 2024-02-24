@@ -1,0 +1,3 @@
+ajout de fonctionalités
+refaire les differentes parties
+faire les kata
